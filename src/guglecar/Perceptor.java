@@ -22,8 +22,7 @@ public class Perceptor extends SingleAgent {
     // Control de la vida del agente
     private boolean exit;
     */
-    public Perceptor
-   (AgentID aid) throws Exception  {
+    public Perceptor(AgentID aid) throws Exception  {
         super(aid);
     }
     
