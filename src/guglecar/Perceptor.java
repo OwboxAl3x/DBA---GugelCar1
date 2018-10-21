@@ -14,14 +14,7 @@ import es.upv.dsic.gti_ia.core.SingleAgent;
  * @author adri
  */
 public class Perceptor extends SingleAgent {
-    /* 
-    // Estado actual del agente
-    private int status;
-    // Mensajes
-    private ACLMessage inbox, outbox;
-    // Control de la vida del agente
-    private boolean exit;
-    */
+    
     public Perceptor(AgentID aid) throws Exception  {
         super(aid);
     }
