@@ -22,7 +22,7 @@ public class Perceptor extends SingleAgent {
     @Override
     public void init()  {
         
-        System.out.println("Agente("+this.getName()+") Iniciando");
+        System.out.println("\nAgente("+this.getName()+") Iniciando");
              
     }
     
@@ -35,7 +35,7 @@ public class Perceptor extends SingleAgent {
     @Override
     public void finalize()  {    
         
-        System.out.println("Agente("+this.getName()+") Terminando"); 
+        System.out.println("\nAgente("+this.getName()+") Terminando"); 
         super.finalize();
         
     }
