@@ -11,7 +11,7 @@ import es.upv.dsic.gti_ia.core.SingleAgent;
 
 /**
  *
- * @author adri
+ * @author Adrian
  */
 public class Perceptor extends SingleAgent {
     
@@ -21,6 +21,8 @@ public class Perceptor extends SingleAgent {
     
     @Override
     public void init()  {
+        
+        System.out.println("Agente("+this.getName()+") Iniciando");
              
     }
     
@@ -31,7 +33,10 @@ public class Perceptor extends SingleAgent {
     }
     
     @Override
-    public void finalize()  {     
+    public void finalize()  {    
+        
+        System.out.println("Agente("+this.getName()+") Terminando"); 
         super.finalize();
+        
     }
 }
