@@ -102,6 +102,10 @@ public class Perceptor extends SingleAgent {
                     this.posX = inObjetoJSON.get("gps").asObject().get("x").asInt();
                     this.posY = inObjetoJSON.get("gps").asObject().get("y").asInt();
 
+                } else {
+                    
+                    System.err.println("El vehiculo ha chocado");
+                    
                 }
 
             } catch (InterruptedException ex) {
