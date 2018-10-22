@@ -30,6 +30,10 @@ public class Coche extends SingleAgent {
         super(aid);
     }
     
+    /**
+    *
+    * @author Alejandro García
+    */
     @Override
     public void init()  {
         
@@ -44,7 +48,7 @@ public class Coche extends SingleAgent {
     @Override
     public void execute()  {
         
-       System.out.println("Haciendo el login en el servidor");
+       System.out.println("\nAgente("+this.getName()+") haciendo el login en el servidor");
        this.logearse();
         
     }
@@ -68,18 +72,20 @@ public class Coche extends SingleAgent {
         
         try {
             
-            System.out.println("Obteniendo respuesta");
+            System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
             inbox = this.receiveACLMessage();
             inObjetoJSON = Json.parse(inbox.getContent()).asObject();
             
             if(!inObjetoJSON.get("result").asString().equals("BAD_MAP") && !inObjetoJSON.get("result").asString().equals("BAD_PROTOCOL")){
                 
                 this.clave = inObjetoJSON.get("result").asString();
-                System.out.println("Logueado");
+                System.out.println("\nAgente("+this.getName()+") logueado");
                 
             }
             
             System.err.println("Fallo en el mapa o en la estructura del mensaje");
+            
+            //Finalizar Perceptor
             
         } catch (InterruptedException ex) {
             
@@ -89,6 +95,10 @@ public class Coche extends SingleAgent {
         
     }
     
+    /**
+    *
+    * @author Alejandro García
+    */
     @Override
     public void finalize()  {    
         
