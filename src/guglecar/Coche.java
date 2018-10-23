@@ -12,8 +12,10 @@ import es.upv.dsic.gti_ia.core.AgentID;
 import es.upv.dsic.gti_ia.core.SingleAgent;
 
 /**
+ * 
+ * Clase que hereda de SingleAgent, que controla al agente coche.
  *
- * @author Adrian
+ * @author Adrian and Alejandro García
  */
 public class Coche extends SingleAgent {
     
@@ -32,7 +34,7 @@ public class Coche extends SingleAgent {
     
     /**
     *
-    * @author Alejandro García
+    * @author Adrian and Alejandro García
     */
     @Override
     public void init()  {
@@ -43,7 +45,7 @@ public class Coche extends SingleAgent {
     
     /**
     *
-    * @author Alejandro García
+    * @author Adrian and Alejandro García
     */
     @Override
     public void execute()  {
@@ -54,8 +56,11 @@ public class Coche extends SingleAgent {
     }
     
     /**
+    * 
+    * Hace que el coche le diga al servidor que quiere loguearse.
     *
     * @author Alejandro García
+    * 
     */
     public void logearse() {
         
@@ -96,8 +101,62 @@ public class Coche extends SingleAgent {
     }
     
     /**
+    * 
+    * Hace que el coche le diga al servidor a donde quiere moverse.
     *
     * @author Alejandro García
+    * @param aDonde Indica la direccion a la que se va a mover el coche
+    * 
+    */
+    public void moverse(String aDonde) {
+        
+        outObjetoJSON.add("command", aDonde);
+        outObjetoJSON.add("key", this.clave);
+        
+        outbox.setSender(this.getAid());
+        outbox.setReceiver(new AgentID("Cerastes"));
+        outbox.setContent(outObjetoJSON.toString());
+        
+        System.out.println("\nAgente("+this.getName()+") enviando movimiento al servidor");
+        this.send(outbox);
+        
+        try {
+            
+            System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
+            inbox = this.receiveACLMessage();
+            inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+            
+            if(!inObjetoJSON.get("result").asString().equals("BAD_KEY") && !inObjetoJSON.get("result").asString().equals("BAD_PROTOCOL") && !inObjetoJSON.get("result").asString().equals("BAD_COMMAND")){
+                
+                if(!inObjetoJSON.get("result").asString().equals("CRASHED")){
+                    
+                    System.out.println("\nAgente("+this.getName()+") se ha movido");
+                    
+                } else {
+                    
+                    System.out.println("\nAgente("+this.getName()+") se ha chocado o se ha quedado sin bateria");
+                    
+                    //Desloguearse y avisar al Perceptor para que se cierre
+                    
+                }
+                
+            }
+            
+            System.err.println("Fallo en la estructura del mensaje");
+            
+            //Desloguearse y avisar al Perceptor para que se cierre
+            
+        } catch (InterruptedException ex) {
+            
+            System.err.println("Error al moverse");
+            
+        }
+        
+    }
+    
+    /**
+    *
+    * @author Adrian and Alejandro García
     */
     @Override
     public void finalize()  {    

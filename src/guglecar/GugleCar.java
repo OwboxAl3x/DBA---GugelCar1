@@ -10,12 +10,12 @@ import es.upv.dsic.gti_ia.core.AgentsConnection;
 
 /**
  *
- * @author adri
+ * @author Adrian and Alejandro García
  */
 public class GugleCar {
 
     /**
-     * @author Alejandro García
+     * @author Adrian and Alejandro García
      * @param args the command line arguments
      */
     public static void main(String[] args) {

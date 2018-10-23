@@ -13,8 +13,10 @@ import es.upv.dsic.gti_ia.core.AgentID;
 import es.upv.dsic.gti_ia.core.SingleAgent;
 
 /**
+ * 
+ * Clase que hereda de SingleAgent, que controla al agente Perceptor
  *
- * @author Adrian
+ * @author Adrian and Alejandro García
  */
 public class Perceptor extends SingleAgent {
     
@@ -32,7 +34,7 @@ public class Perceptor extends SingleAgent {
     
     /**
     *
-    * @author Alejandro García
+    * @author Adrian and Alejandro García
     */
     @Override
     public void init()  {
@@ -50,7 +52,7 @@ public class Perceptor extends SingleAgent {
     
     /**
     *
-    * @author Alejandro García
+    * @author Adrian and Alejandro García
     */
     @Override
     public void execute()  {
@@ -60,6 +62,8 @@ public class Perceptor extends SingleAgent {
     }
     
     /**
+    * 
+    * Clase que pone al Perceptor a la espera de los mensajes de los sensores.
     *
     * @author Alejandro García
     */
@@ -120,7 +124,7 @@ public class Perceptor extends SingleAgent {
     
     /**
     *
-    * @author Alejandro García
+    * @author Adrian and Alejandro García
     */
     @Override
     public void finalize()  {    
