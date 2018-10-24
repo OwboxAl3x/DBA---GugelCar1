@@ -16,12 +16,14 @@ import es.upv.dsic.gti_ia.core.SingleAgent;
  * 
  * Clase que hereda de SingleAgent, que controla al agente Perceptor
  *
- * @author Adrian and Alejandro García
+ * @author Adrian and Alejandro García and Manuel Ros Rodríguez
  */
 public class Perceptor extends SingleAgent {
     
     JsonObject inObjetoJSON;
+    JsonObject outObjetoJSON;
     ACLMessage inbox;
+    ACLMessage outbox;
     
     float scanner[];
     int radar[];
@@ -34,7 +36,7 @@ public class Perceptor extends SingleAgent {
     
     /**
     *
-    * @author Adrian and Alejandro García
+    * @author Adrian and Alejandro García and Manuel Ros Rodríguez
     */
     @Override
     public void init()  {
@@ -42,7 +44,9 @@ public class Perceptor extends SingleAgent {
         System.out.println("\nAgente("+this.getName()+") Iniciando");
         
         inObjetoJSON = new JsonObject();
+        outObjetoJSON = new JsonObject();
         inbox = new ACLMessage();
+        outbox = new ACLMessage();
         
         scanner = new float[25];
         radar = new int[25];
@@ -63,9 +67,9 @@ public class Perceptor extends SingleAgent {
     
     /**
     * 
-    * Clase que pone al Perceptor a la espera de los mensajes de los sensores.
+    * Método que pone al Perceptor a la espera de los mensajes de los sensores.
     *
-    * @author Alejandro García
+    * @author Alejandro García and Manuel Ros Rodríguez
     */
     public void percibiendo() {
         
@@ -73,44 +77,37 @@ public class Perceptor extends SingleAgent {
             
             try {
             
+                // Suponiendo que se recibe un mensaje distinto con cada percepción, por tanto 3 mensajes
+                // Falta tener en cuenta el caso donde recibe un mensaje de logout del coche
                 System.out.println("\nAgente("+this.getName()+") obteniendo percepción del servidor");
+                
+                // Recibimos las percepciones y combinamos los JSON
                 inbox = this.receiveACLMessage();
                 inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                outObjetoJSON.merge(inObjetoJSON);
+                
+                inbox = this.receiveACLMessage();
+                inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                outObjetoJSON.merge(inObjetoJSON);
+                
+                inbox = this.receiveACLMessage();
+                inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                outObjetoJSON.merge(inObjetoJSON);
 
-                if(inbox.getContent().contains("scanner")){
-
-                    int i = 0;
-
-                    for(JsonValue j : inObjetoJSON.get("scanner").asArray()){
-
-                        this.scanner[i] = j.asFloat();
-
-                        i++;
-
-                    }
-
-                } else if(inbox.getContent().contains("radar")){
-
-                    int i = 0;
-
-                    for(JsonValue j : inObjetoJSON.get("radar").asArray()){
-
-                        this.radar[i] = j.asInt();
-
-                        i++;
-
-                    }
-
-                } else if(inbox.getContent().contains("gps")){
-
-                    this.posX = inObjetoJSON.get("gps").asObject().get("x").asInt();
-                    this.posY = inObjetoJSON.get("gps").asObject().get("y").asInt();
-
+                if(inbox.getContent().contains("CRASHED")){
+                    System.err.println("El vehiculo ha chocado");                  
                 } else {
+                    outbox.setSender(this.getAid());
+                    outbox.setReceiver(new AgentID("car"));
+                    outbox.setContent(outObjetoJSON.toString());
+                    this.send(outbox);
                     
-                    System.err.println("El vehiculo ha chocado");
+                    inbox = this.receiveACLMessage();
                     
-                }
+                    if (!inbox.getContent().contains("OK")){
+                        // no estoy seguro de que hacer ***
+                    }
+                }  
 
             } catch (InterruptedException ex) {
 

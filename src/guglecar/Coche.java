@@ -10,6 +10,10 @@ import com.eclipsesource.json.JsonObject;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import es.upv.dsic.gti_ia.core.SingleAgent;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * 
@@ -59,7 +63,7 @@ public class Coche extends SingleAgent {
     * 
     * Hace que el coche le diga al servidor que quiere loguearse.
     *
-    * @author Alejandro García
+    * @author Alejandro García and Manuel Ros Rodríguez
     * 
     */
     public void logearse() {
@@ -85,6 +89,7 @@ public class Coche extends SingleAgent {
                 
                 this.clave = inObjetoJSON.get("result").asString();
                 System.out.println("\nAgente("+this.getName()+") logueado");
+                this.calcularAccion();
                 
             }
             
@@ -98,6 +103,74 @@ public class Coche extends SingleAgent {
             
         }
         
+    }
+    
+    /**
+     * Calcula la siguiente acción que hará.
+     * 
+     * @author Manuel Ros Rodríguez
+     * 
+     * 
+     */
+    public void calcularAccion(){
+        boolean salir = false;
+        
+        while (!salir){
+            
+            try {
+                // Recibimos el mensaje del perceptor
+                inbox = this.receiveACLMessage();
+                inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                
+                outbox = new ACLMessage();
+                outbox.setSender(this.getAid());
+                outbox.setReceiver(new AgentID("sensor"));
+                outbox.setContent("OK");
+                this.send(outbox);
+                
+                
+                // *** Comprobar si tiene que hacer refuel
+                
+                // Algoritmo de cálculo de movimiento
+                
+                if (inObjetoJSON.get("radar").asArray().get(12).asInt() != 2){
+                    TreeMap<Float,String> casillas = new TreeMap<Float,String>();
+
+                    if (inObjetoJSON.get("radar").asArray().get(6).asInt() != 1){
+                        casillas.put(inObjetoJSON.get("scanner").asArray().get(6).asFloat(), "NW");
+                    }
+                    if (inObjetoJSON.get("radar").asArray().get(7).asInt() != 1){
+                        casillas.put(inObjetoJSON.get("scanner").asArray().get(7).asFloat(), "N");
+                    }
+                    if (inObjetoJSON.get("radar").asArray().get(8).asInt() != 1){
+                        casillas.put(inObjetoJSON.get("scanner").asArray().get(8).asFloat(), "NE");
+                    }
+                    if (inObjetoJSON.get("radar").asArray().get(11).asInt() != 1){
+                        casillas.put(inObjetoJSON.get("scanner").asArray().get(11).asFloat(), "W");
+                    }
+                    if (inObjetoJSON.get("radar").asArray().get(13).asInt() != 1){
+                        casillas.put(inObjetoJSON.get("scanner").asArray().get(13).asFloat(), "E");
+                    }
+                    if (inObjetoJSON.get("radar").asArray().get(16).asInt() != 1){
+                        casillas.put(inObjetoJSON.get("scanner").asArray().get(16).asFloat(), "SW");
+                    }
+                    if (inObjetoJSON.get("radar").asArray().get(17).asInt() != 1){
+                        casillas.put(inObjetoJSON.get("scanner").asArray().get(17).asFloat(), "S");
+                    }
+                    if (inObjetoJSON.get("radar").asArray().get(18).asInt() != 1){
+                        casillas.put(inObjetoJSON.get("scanner").asArray().get(18).asFloat(), "SE");
+                    }
+
+                    Map.Entry<Float,String> casillaResultado = casillas.firstEntry();
+
+                    this.moverse("move"+casillaResultado.getValue());
+                } else {
+                    // logout
+                }
+            } catch (InterruptedException ex) {
+                System.out.println("Error al recibir mensaje");
+            }
+        }
     }
     
     /**
