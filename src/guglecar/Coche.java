@@ -10,6 +10,7 @@ import com.eclipsesource.json.JsonObject;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import es.upv.dsic.gti_ia.core.SingleAgent;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
@@ -31,6 +32,11 @@ public class Coche extends SingleAgent {
     String clave;
     String comando = "login";
     String mapa = "";
+    
+    int x;
+    int y;
+    
+    ArrayList<ArrayList<Integer>> mapaMemoria = new ArrayList<>();
     
     public Coche(AgentID aid) throws Exception  {
         super(aid);
@@ -109,7 +115,7 @@ public class Coche extends SingleAgent {
      * Calcula la siguiente acción que hará.
      * 
      * @author Manuel Ros Rodríguez
-     * 
+     * @author Fernando Ruiz Hernández
      * 
      */
     public void calcularAccion(){
@@ -121,6 +127,9 @@ public class Coche extends SingleAgent {
                 // Recibimos el mensaje del perceptor
                 inbox = this.receiveACLMessage();
                 inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                
+                // Actualiza el mapa en memoria
+                this.actualizarMapa(inObjetoJSON);
                 
                 outbox = new ACLMessage();
                 outbox.setSender(this.getAid());
@@ -225,6 +234,67 @@ public class Coche extends SingleAgent {
             
         }
         
+    }
+    
+    /**
+     * Actualiza el mapa en la memoria. Las casillas desconocidas se representan
+     * con el valor -1.
+     * 
+     * @author Fernando Ruiz Hernández
+     * @param percepcion Objeto JSON con la percepción recibida
+     */
+    public void actualizarMapa(JsonObject percepcion) {
+        // Coordenadas de posición
+        x = percepcion.get("gps").asObject().get("x").asInt();
+        y = percepcion.get("gps").asObject().get("y").asInt();
+        
+        // Ajustar tamaño del mapa si es necesario
+        int sizeNuevo = x + 3;
+        if (sizeNuevo < y + 3)
+            sizeNuevo = y + 3;
+        if (sizeNuevo > mapaMemoria.size())
+            this.extenderMapa(sizeNuevo);
+        
+        // Actualizar casillas
+        int casilla_valor;
+        int casilla_x;
+        int casilla_y;
+        for (int i=0; i<5; i++) {
+            casilla_y = y + i - 2;
+            for (int j=0; j<5; j++) {
+                casilla_x = x + j - 2;
+                casilla_valor = percepcion.get("radar").asArray().get(i*5 + j).asInt();
+                if (casilla_x >= 0 && casilla_y >= 0)
+                    mapaMemoria.get(casilla_y).set(casilla_x, casilla_valor);
+            }
+        }
+    }
+    
+    /**
+     * Extiende el tamaño del mapa en la memoria. Se rellena con el valor -1.
+     * 
+     * @author Fernando Ruiz Hernández
+     * @param sizeNuevo Tamaño nuevo
+     */
+    public void extenderMapa(int sizeNuevo) {
+        int size = mapaMemoria.size();
+        
+        // Extender filas existentes
+        for (int i=0; i<size; i++) {
+            for (int j=size; j<sizeNuevo; j++) {
+                mapaMemoria.get(i).add(-1);
+            }
+        }
+
+        // Añadir nuevas filas
+        ArrayList<Integer> fila;
+        for (int i=size; i<sizeNuevo; i++) {
+            fila = new ArrayList<>();
+            for (int j=0; j<sizeNuevo; j++) {
+                fila.add(-1);
+            }
+            mapaMemoria.add(fila);
+        }
     }
     
     /**
