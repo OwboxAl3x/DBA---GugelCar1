@@ -175,6 +175,8 @@ public class Coche extends SingleAgent {
                     this.moverse("move"+casillaResultado.getValue());
                 } else {
                     // logout
+                    this.logout();
+                    
                 }
             } catch (InterruptedException ex) {
                 System.out.println("Error al recibir mensaje");
@@ -220,6 +222,7 @@ public class Coche extends SingleAgent {
                     
                     //Desloguearse y avisar al Perceptor para que se cierre
                     
+                    
                 }
                 
             }
@@ -227,6 +230,7 @@ public class Coche extends SingleAgent {
             System.err.println("Fallo en la estructura del mensaje");
             
             //Desloguearse y avisar al Perceptor para que se cierre
+            
             
         } catch (InterruptedException ex) {
             
@@ -296,6 +300,45 @@ public class Coche extends SingleAgent {
             mapaMemoria.add(fila);
         }
     }
+    
+    /**
+    *
+    * @author Adrian Martin
+    */
+    
+    public void logout(){
+        
+        System.out.println("\nAgente("+this.getName()+") haciendo logout");
+        JsonObject jsonLogout = new JsonObject();
+        
+        jsonLogout.add("command", "logout");
+        jsonLogout.add("key", this.clave);
+            
+        outbox.setContent(jsonLogout.toString());
+        this.send(outbox);
+
+        try {
+            
+            System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
+            inbox = this.receiveACLMessage();
+            inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+            
+            if(inObjetoJSON.get("result").asString().equals("OK")){
+                
+                System.out.println("\nAgente("+this.getName()+") deslogueado");
+             
+            }
+            
+            System.err.println("Fallo en la estructura del mensaje");
+
+            
+        } catch (InterruptedException ex) {
+            
+            System.err.println("Error al hacer el logout");
+            
+        }
+    }
+    
     
     /**
     *
