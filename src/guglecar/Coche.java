@@ -26,12 +26,15 @@ public class Coche extends SingleAgent {
     
     JsonObject inObjetoJSON = new JsonObject();
     JsonObject outObjetoJSON = new JsonObject();
+  
     ACLMessage outbox = new ACLMessage();
     ACLMessage inbox = new ACLMessage();
     
     String clave;
     String comando = "login";
     String mapa = "";
+    
+    double bateria = 0.0;
     
     int x;
     int y;
@@ -124,10 +127,11 @@ public class Coche extends SingleAgent {
         while (!salir){
             
             try {
+                
                 // Recibimos el mensaje del perceptor
                 inbox = this.receiveACLMessage();
                 inObjetoJSON = Json.parse(inbox.getContent()).asObject();
-                
+                  
                 // Actualiza el mapa en memoria
                 this.actualizarMapa(inObjetoJSON);
                 
@@ -139,7 +143,9 @@ public class Coche extends SingleAgent {
                 
                 
                 // *** Comprobar si tiene que hacer refuel
-                
+                 if(bateria <= 1.0){
+                    refuel();
+                }
                 // Algoritmo de cálculo de movimiento
                 
                 if (inObjetoJSON.get("radar").asArray().get(12).asInt() != 2){
@@ -173,6 +179,7 @@ public class Coche extends SingleAgent {
                     Map.Entry<Float,String> casillaResultado = casillas.firstEntry();
 
                     this.moverse("move"+casillaResultado.getValue());
+                    bateria--;
                 } else {
                     // logout
                     this.logout();
@@ -298,6 +305,43 @@ public class Coche extends SingleAgent {
                 fila.add(-1);
             }
             mapaMemoria.add(fila);
+        }
+    }
+    
+    /**
+    *
+    * @author Adrian Martin
+    */
+    public void refuel(){
+        
+        System.out.println("\nAgente("+this.getName()+") recargando bateria");
+        JsonObject jsonRefuel = new JsonObject();
+        
+        jsonRefuel.add("command", "refuel");
+        jsonRefuel.add("key", this.clave);
+            
+        outbox.setContent(jsonRefuel.toString());
+        this.send(outbox);
+
+        try {
+            
+            System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
+            inbox = this.receiveACLMessage();
+            inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+            
+            if(inObjetoJSON.get("result").asString().equals("OK")){
+                
+                System.out.println("\nAgente("+this.getName()+") a tope de bateria");
+                this.bateria = 99.0;
+            }
+            
+            System.err.println("Fallo en la estructura del mensaje");
+
+            
+        } catch (InterruptedException ex) {
+            
+            System.err.println("Error al hacer el refuel");
+            
         }
     }
     
