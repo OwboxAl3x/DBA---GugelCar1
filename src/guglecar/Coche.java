@@ -6,10 +6,14 @@
 package guglecar;
 
 import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import es.upv.dsic.gti_ia.core.SingleAgent;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
@@ -103,6 +107,7 @@ public class Coche extends SingleAgent {
             System.out.println(inbox.getContent());
             
             inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+            this.crearImagen();
             
             System.out.println("Mensaje del servidor: "+inObjetoJSON.get("result").asString());
             
@@ -360,6 +365,7 @@ public class Coche extends SingleAgent {
     /**
     *
     * @author Adrian Martin
+    * @author Manuel Ros Rodríguez
     */
     
     public void logout(){
@@ -382,7 +388,11 @@ public class Coche extends SingleAgent {
             if(inObjetoJSON.get("result").asString().equals("OK")){
                 
                 System.out.println("\nAgente("+this.getName()+") deslogueado");
-             
+                
+                inbox = this.receiveACLMessage();
+                inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                System.out.println("\nAgente("+this.getName()+") traza recibida, creando imagen");
+                this.crearImagen();
             }
             
             System.err.println("Fallo en la estructura del mensaje");
@@ -395,10 +405,33 @@ public class Coche extends SingleAgent {
         }
     }
     
+    /**
+     * Crea una imagen a partir de la traza
+     * 
+     * @author Manuel Ros Rodríguez
+     */
+    public void crearImagen(){
+        try {
+            JsonArray array = inObjetoJSON.get("trace").asArray();
+            byte data[] = new byte [array.size()];
+            for (int i=0; i<data.length; i++){
+                    data[i] = (byte) array.get(i).asInt();
+            }
+            FileOutputStream fos;
+            fos = new FileOutputStream("traza"+this.mapa+".png");
+            fos.write(data);
+            fos.close();
+            System.out.println("Imagen creada");
+        } catch (IOException ex) {
+            System.out.println("Fallo al crear la imagen");
+        }
+    }
+    
     
     /**
     *
-    * @author Adrian and Alejandro García
+    * @author Adrian
+    * @author Alejandro García
     */
     @Override
     public void finalize()  {    

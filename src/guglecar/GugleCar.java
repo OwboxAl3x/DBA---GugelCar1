@@ -10,7 +10,8 @@ import es.upv.dsic.gti_ia.core.AgentsConnection;
 
 /**
  *
- * @author Adrian and Alejandro García
+ * @author Adrian
+ * @author Alejandro García
  */
 public class GugleCar {
 

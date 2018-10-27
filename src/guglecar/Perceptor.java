@@ -16,7 +16,9 @@ import es.upv.dsic.gti_ia.core.SingleAgent;
  * 
  * Clase que hereda de SingleAgent, que controla al agente Perceptor
  *
- * @author Adrian and Alejandro García and Manuel Ros Rodríguez
+ * @author Adrian
+ * @author Alejandro García
+ * @author Manuel Ros Rodríguez
  */
 public class Perceptor extends SingleAgent {
     
@@ -58,7 +60,8 @@ public class Perceptor extends SingleAgent {
     
     /**
     *
-    * @author Adrian and Alejandro García
+    * @author Adrian
+    * @author Alejandro García
     */
     @Override
     public void execute()  {
