@@ -20,7 +20,8 @@ import java.util.logging.Logger;
  * 
  * Clase que hereda de SingleAgent, que controla al agente coche.
  *
- * @author Adrian and Alejandro García
+ * @author Adrian
+ * @author Alejandro García
  */
 public class Coche extends SingleAgent {
     
@@ -32,7 +33,7 @@ public class Coche extends SingleAgent {
     
     String clave;
     String comando = "login";
-    String mapa = "";
+    String mapa = "map1";
     
     double bateria = 0.0;
     
@@ -47,7 +48,8 @@ public class Coche extends SingleAgent {
     
     /**
     *
-    * @author Adrian and Alejandro García
+    * @author Adrian
+    * @author Alejandro García
     */
     @Override
     public void init()  {
@@ -58,7 +60,8 @@ public class Coche extends SingleAgent {
     
     /**
     *
-    * @author Adrian and Alejandro García
+    * @author Adrian
+    * @author Alejandro García
     */
     @Override
     public void execute()  {
@@ -72,7 +75,8 @@ public class Coche extends SingleAgent {
     * 
     * Hace que el coche le diga al servidor que quiere loguearse.
     *
-    * @author Alejandro García and Manuel Ros Rodríguez
+    * @author Alejandro García
+    * @author Manuel Ros Rodríguez
     * 
     */
     public void logearse() {
@@ -83,6 +87,8 @@ public class Coche extends SingleAgent {
         outObjetoJSON.add("scanner", "sensor");
         outObjetoJSON.add("gps", "sensor");
         
+        System.out.println("Mensaje del servidor: "+outObjetoJSON.toString());
+        
         outbox.setSender(this.getAid());
         outbox.setReceiver(new AgentID("Cerastes"));
         outbox.setContent(outObjetoJSON.toString());
@@ -91,8 +97,14 @@ public class Coche extends SingleAgent {
         try {
             
             System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
-            inbox = this.receiveACLMessage();
+            
+            inbox = this.receiveACLMessage(); //Aqui esta el fallo, el servidor envia el trace...
+            
+            System.out.println(inbox.getContent());
+            
             inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+            
+            System.out.println("Mensaje del servidor: "+inObjetoJSON.get("result").asString());
             
             if(!inObjetoJSON.get("result").asString().equals("BAD_MAP") && !inObjetoJSON.get("result").asString().equals("BAD_PROTOCOL")){
                 

@@ -36,7 +36,9 @@ public class Perceptor extends SingleAgent {
     
     /**
     *
-    * @author Adrian and Alejandro García and Manuel Ros Rodríguez
+    * @author Adrian
+    * @author Alejandro García
+    * @author Manuel Ros Rodríguez
     */
     @Override
     public void init()  {
@@ -62,6 +64,7 @@ public class Perceptor extends SingleAgent {
     public void execute()  {
        
         System.out.println("\nAgente("+this.getName()+") Percibiendo");
+        //this.percibiendo();
         
     }
     
@@ -69,7 +72,8 @@ public class Perceptor extends SingleAgent {
     * 
     * Método que pone al Perceptor a la espera de los mensajes de los sensores.
     *
-    * @author Alejandro García and Manuel Ros Rodríguez
+    * @author Alejandro García
+    * @author Manuel Ros Rodríguez
     */
     public void percibiendo() {
         
@@ -95,8 +99,12 @@ public class Perceptor extends SingleAgent {
                 outObjetoJSON.merge(inObjetoJSON);
 
                 if(inbox.getContent().contains("CRASHED")){
-                    System.err.println("El vehiculo ha chocado");                  
+                    
+                    System.err.println("El vehiculo ha chocado");  
+                    this.fin = true;
+                    
                 } else {
+                    
                     outbox.setSender(this.getAid());
                     outbox.setReceiver(new AgentID("car"));
                     outbox.setContent(outObjetoJSON.toString());
@@ -105,8 +113,11 @@ public class Perceptor extends SingleAgent {
                     inbox = this.receiveACLMessage();
                     
                     if (!inbox.getContent().contains("OK")){
+                        
                         // no estoy seguro de que hacer ***
+                        
                     }
+                    
                 }  
 
             } catch (InterruptedException ex) {
@@ -121,7 +132,8 @@ public class Perceptor extends SingleAgent {
     
     /**
     *
-    * @author Adrian and Alejandro García
+    * @author Adrian
+    * @author Alejandro García
     */
     @Override
     public void finalize()  {    
