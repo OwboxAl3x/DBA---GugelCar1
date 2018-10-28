@@ -67,7 +67,7 @@ public class Perceptor extends SingleAgent {
     public void execute()  {
        
         System.out.println("\nAgente("+this.getName()+") Percibiendo");
-        //this.percibiendo();
+        this.percibiendo();
         
     }
     
@@ -90,38 +90,46 @@ public class Perceptor extends SingleAgent {
                 
                 // Recibimos las percepciones y combinamos los JSON
                 inbox = this.receiveACLMessage();
-                inObjetoJSON = Json.parse(inbox.getContent()).asObject();
-                outObjetoJSON.merge(inObjetoJSON);
                 
-                inbox = this.receiveACLMessage();
-                inObjetoJSON = Json.parse(inbox.getContent()).asObject();
-                outObjetoJSON.merge(inObjetoJSON);
-                
-                inbox = this.receiveACLMessage();
-                inObjetoJSON = Json.parse(inbox.getContent()).asObject();
-                outObjetoJSON.merge(inObjetoJSON);
+                if (!inbox.getContent().equals("logout")){
+                    inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                    outObjetoJSON.merge(inObjetoJSON);
 
-                if(inbox.getContent().contains("CRASHED")){
-                    
-                    System.err.println("El vehiculo ha chocado");  
-                    this.fin = true;
-                    
+                    inbox = this.receiveACLMessage();
+                    inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                    outObjetoJSON.merge(inObjetoJSON);
+
+                    inbox = this.receiveACLMessage();
+                    inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                    outObjetoJSON.merge(inObjetoJSON);
+
+                    if(inbox.getContent().contains("CRASHED")){
+
+                        System.err.println("El vehiculo ha chocado");  
+                        this.fin = true;
+                    } else {
+                        outbox.setSender(this.getAid());
+                        outbox.setReceiver(new AgentID("car"));
+                        outbox.setContent(outObjetoJSON.toString());
+                        this.send(outbox);
+
+                        inbox = this.receiveACLMessage(); // aqui recibe mensaje de percepcion, y acaba provocando crasheo más adelante
+                        System.out.println("valor de fin:"+this.fin+"valor inbox: "+inbox.getContent());
+                        if (!inbox.getContent().contains("OK")){
+
+                            // no estoy seguro de que hacer ***
+
+                        }
+
+                    }  
                 } else {
-                    
                     outbox.setSender(this.getAid());
                     outbox.setReceiver(new AgentID("car"));
-                    outbox.setContent(outObjetoJSON.toString());
+                    outbox.setContent("OK");
                     this.send(outbox);
                     
-                    inbox = this.receiveACLMessage();
-                    
-                    if (!inbox.getContent().contains("OK")){
-                        
-                        // no estoy seguro de que hacer ***
-                        
-                    }
-                    
-                }  
+                    this.fin = true;
+                }
 
             } catch (InterruptedException ex) {
 

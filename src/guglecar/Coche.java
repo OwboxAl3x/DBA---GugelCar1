@@ -85,13 +85,12 @@ public class Coche extends SingleAgent {
     */
     public void logearse() {
         
+        //outObjetoJSON.add("command", "asd"); // Para cuando devuelve traza el servidor
         outObjetoJSON.add("command", comando);
         outObjetoJSON.add("world", mapa);
         outObjetoJSON.add("radar", "sensor");
         outObjetoJSON.add("scanner", "sensor");
         outObjetoJSON.add("gps", "sensor");
-        
-        System.out.println("Mensaje del servidor: "+outObjetoJSON.toString());
         
         outbox.setSender(this.getAid());
         outbox.setReceiver(new AgentID("Cerastes"));
@@ -102,14 +101,9 @@ public class Coche extends SingleAgent {
             
             System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
             
-            inbox = this.receiveACLMessage(); //Aqui esta el fallo, el servidor envia el trace...
-            
+            inbox = this.receiveACLMessage();
             System.out.println(inbox.getContent());
-            
-            inObjetoJSON = Json.parse(inbox.getContent()).asObject();
-            this.crearImagen();
-            
-            System.out.println("Mensaje del servidor: "+inObjetoJSON.get("result").asString());
+            inObjetoJSON = Json.parse(inbox.getContent()).asObject();  
             
             if(!inObjetoJSON.get("result").asString().equals("BAD_MAP") && !inObjetoJSON.get("result").asString().equals("BAD_PROTOCOL")){
                 
@@ -136,6 +130,7 @@ public class Coche extends SingleAgent {
      * 
      * @author Manuel Ros Rodríguez
      * @author Fernando Ruiz Hernández
+     * @author Adrian Martin
      * 
      */
     public void calcularAccion(){
@@ -146,11 +141,12 @@ public class Coche extends SingleAgent {
             try {
                 
                 // Recibimos el mensaje del perceptor
+                System.out.println("\nAgente("+this.getName()+") recibiendo percepción del perceptor");
                 inbox = this.receiveACLMessage();
-                inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                JsonObject percepcionJson = Json.parse(inbox.getContent()).asObject();
                   
                 // Actualiza el mapa en memoria
-                this.actualizarMapa(inObjetoJSON);
+                this.actualizarMapa(percepcionJson);
                 
                 outbox = new ACLMessage();
                 outbox.setSender(this.getAid());
@@ -163,34 +159,33 @@ public class Coche extends SingleAgent {
                  if(bateria <= 1.0){
                     refuel();
                 }
-                // Algoritmo de cálculo de movimiento
-                
-                if (inObjetoJSON.get("radar").asArray().get(12).asInt() != 2){
+                // Algoritmo de cálculo de movimiento                
+                if (percepcionJson.get("radar").asArray().get(12).asInt() != 2){
                     TreeMap<Float,String> casillas = new TreeMap<Float,String>();
 
-                    if (inObjetoJSON.get("radar").asArray().get(6).asInt() != 1){
-                        casillas.put(inObjetoJSON.get("scanner").asArray().get(6).asFloat(), "NW");
+                    if (percepcionJson.get("radar").asArray().get(6).asInt() != 1){
+                        casillas.put(percepcionJson.get("scanner").asArray().get(6).asFloat(), "NW");
                     }
-                    if (inObjetoJSON.get("radar").asArray().get(7).asInt() != 1){
-                        casillas.put(inObjetoJSON.get("scanner").asArray().get(7).asFloat(), "N");
+                    if (percepcionJson.get("radar").asArray().get(7).asInt() != 1){
+                        casillas.put(percepcionJson.get("scanner").asArray().get(7).asFloat(), "N");
                     }
-                    if (inObjetoJSON.get("radar").asArray().get(8).asInt() != 1){
-                        casillas.put(inObjetoJSON.get("scanner").asArray().get(8).asFloat(), "NE");
+                    if (percepcionJson.get("radar").asArray().get(8).asInt() != 1){
+                        casillas.put(percepcionJson.get("scanner").asArray().get(8).asFloat(), "NE");
                     }
-                    if (inObjetoJSON.get("radar").asArray().get(11).asInt() != 1){
-                        casillas.put(inObjetoJSON.get("scanner").asArray().get(11).asFloat(), "W");
+                    if (percepcionJson.get("radar").asArray().get(11).asInt() != 1){
+                        casillas.put(percepcionJson.get("scanner").asArray().get(11).asFloat(), "W");
                     }
-                    if (inObjetoJSON.get("radar").asArray().get(13).asInt() != 1){
-                        casillas.put(inObjetoJSON.get("scanner").asArray().get(13).asFloat(), "E");
+                    if (percepcionJson.get("radar").asArray().get(13).asInt() != 1){
+                        casillas.put(percepcionJson.get("scanner").asArray().get(13).asFloat(), "E");
                     }
-                    if (inObjetoJSON.get("radar").asArray().get(16).asInt() != 1){
-                        casillas.put(inObjetoJSON.get("scanner").asArray().get(16).asFloat(), "SW");
+                    if (percepcionJson.get("radar").asArray().get(16).asInt() != 1){
+                        casillas.put(percepcionJson.get("scanner").asArray().get(16).asFloat(), "SW");
                     }
-                    if (inObjetoJSON.get("radar").asArray().get(17).asInt() != 1){
-                        casillas.put(inObjetoJSON.get("scanner").asArray().get(17).asFloat(), "S");
+                    if (percepcionJson.get("radar").asArray().get(17).asInt() != 1){
+                        casillas.put(percepcionJson.get("scanner").asArray().get(17).asFloat(), "S");
                     }
-                    if (inObjetoJSON.get("radar").asArray().get(18).asInt() != 1){
-                        casillas.put(inObjetoJSON.get("scanner").asArray().get(18).asFloat(), "SE");
+                    if (percepcionJson.get("radar").asArray().get(18).asInt() != 1){
+                        casillas.put(percepcionJson.get("scanner").asArray().get(18).asFloat(), "SE");
                     }
 
                     Map.Entry<Float,String> casillaResultado = casillas.firstEntry();
@@ -328,6 +323,7 @@ public class Coche extends SingleAgent {
     /**
     *
     * @author Adrian Martin
+    * @author Manuel Ros Rodríguez
     */
     public void refuel(){
         
@@ -336,7 +332,10 @@ public class Coche extends SingleAgent {
         
         jsonRefuel.add("command", "refuel");
         jsonRefuel.add("key", this.clave);
-            
+
+        outbox = new ACLMessage();
+        outbox.setSender(this.getAid());
+        outbox.setReceiver(new AgentID("Cerastes"));
         outbox.setContent(jsonRefuel.toString());
         this.send(outbox);
 
@@ -350,10 +349,9 @@ public class Coche extends SingleAgent {
                 
                 System.out.println("\nAgente("+this.getName()+") a tope de bateria");
                 this.bateria = 99.0;
+            } else {
+                System.err.println("Fallo en la estructura del mensaje");
             }
-            
-            System.err.println("Fallo en la estructura del mensaje");
-
             
         } catch (InterruptedException ex) {
             
@@ -376,6 +374,9 @@ public class Coche extends SingleAgent {
         jsonLogout.add("command", "logout");
         jsonLogout.add("key", this.clave);
             
+        outbox = new ACLMessage();
+        outbox.setSender(this.getAid());
+        outbox.setReceiver(new AgentID("Cerastes"));
         outbox.setContent(jsonLogout.toString());
         this.send(outbox);
 
@@ -393,6 +394,18 @@ public class Coche extends SingleAgent {
                 inObjetoJSON = Json.parse(inbox.getContent()).asObject();
                 System.out.println("\nAgente("+this.getName()+") traza recibida, creando imagen");
                 this.crearImagen();
+                
+                outbox = new ACLMessage();
+                outbox.setSender(this.getAid());
+                outbox.setReceiver(new AgentID("sensor"));
+                outbox.setContent("logout");
+                this.send(outbox);
+                
+                inbox = this.receiveACLMessage();
+
+                if (!inbox.getContent().equals("OK")){
+                    // ni idea
+                }
             }
             
             System.err.println("Fallo en la estructura del mensaje");
