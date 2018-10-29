@@ -31,12 +31,14 @@ public class Perceptor extends SingleAgent {
     int radar[];
     int posX, posY;
     int contador = 0;
+    int contadorP = 0;
     boolean fin;
     
-    String nombreCoche = "car7";
+    String nombreCoche;
     
-    public Perceptor(AgentID aid) throws Exception  {
+    public Perceptor(AgentID aid, String nombreCoche) throws Exception  {
         super(aid);
+        this.nombreCoche = nombreCoche;
     }
     
     /**
@@ -82,18 +84,17 @@ public class Perceptor extends SingleAgent {
     * @author Manuel Ros Rodríguez
     */
     public void percibiendo() {
-        
-        while(!fin){
-            
-            try {
-            
+         
+        while(!fin){    
+            try {    
                 // Suponiendo que se recibe un mensaje distinto con cada percepción, por tanto 3 mensajes
                 // Falta tener en cuenta el caso donde recibe un mensaje de logout del coche
                 System.out.println("\nAgente("+this.getName()+") obteniendo percepción del servidor");
                 
                 // Recibimos las percepciones y combinamos los JSON
                 inbox = this.receiveACLMessage();
-                System.out.println("perceptor contador:"+contador+ " y el mensaje:"+inbox.getContent());
+                System.out.println("fin vale:"+fin+" y perceptor contador:"+contador+ " y el mensaje:"+inbox.getContent());
+                System.out.println("sender:"+inbox.getSender()+" y yo:"+this.getAid());
                 
                 if (!inbox.getContent().contains("logout")){
                     inObjetoJSON = Json.parse(inbox.getContent()).asObject();
@@ -117,6 +118,7 @@ public class Perceptor extends SingleAgent {
                         outbox.setReceiver(new AgentID(nombreCoche));
                         outbox.setContent(outObjetoJSON.toString());
                         this.send(outbox);
+                        outObjetoJSON = new JsonObject();
                         contador++;
                         System.out.println("contador perceptor"+contador);
                         /*inbox = this.receiveACLMessage(); // aqui recibe mensaje de percepcion, y acaba provocando crasheo más adelante
@@ -137,14 +139,14 @@ public class Perceptor extends SingleAgent {
                     System.out.println("contador perceptor"+contador);
                     this.fin = true;
                 }
-
             } catch (InterruptedException ex) {
 
                 System.err.println("Error al hacer el login");
 
             }
-            
         }
+            
+       
         
     }
     

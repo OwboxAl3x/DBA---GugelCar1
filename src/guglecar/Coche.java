@@ -40,18 +40,20 @@ public class Coche extends SingleAgent {
     String clave;
     String comando = "login";
     String mapa = "map1";
-    String nombrePerceptor = "sensor7";
+    String nombrePerceptor;
     
     double bateria = 0.0;
     
     int x;
     int y;
     int contador = 0;
+    int contadorP = 0;
     
     ArrayList<ArrayList<Integer>> mapaMemoria = new ArrayList<>();
     
-    public Coche(AgentID aid) throws Exception  {
+    public Coche(AgentID aid, String nombrePerceptor) throws Exception  {
         super(aid);
+        this.nombrePerceptor = nombrePerceptor;
     }
     
     /**
@@ -150,11 +152,12 @@ public class Coche extends SingleAgent {
                 
                 // Recibimos el mensaje del perceptor
                 System.out.println("\nAgente("+this.getName()+") recibiendo percepción del perceptor");
-                
+                System.out.println("contador cocheMove:"+contador);
+                System.out.println("contador cocheP:"+contadorP);
                 if (!percepcionRecibida){
                     inbox = this.receiveACLMessage();
                     percepcionJson = Json.parse(inbox.getContent()).asObject();
-                    contador++;
+                    contadorP++;
                 } else {
                     percepcionRecibida = false;
                 }
@@ -172,9 +175,8 @@ public class Coche extends SingleAgent {
                 // *** Comprobar si tiene que hacer refuel
                  if(bateria <= 1.0){
                     refuel();
-                }
-                // Algoritmo de cálculo de movimiento                
-                if (percepcionJson.get("radar").asArray().get(12).asInt() != 2){
+                } else if (percepcionJson.get("radar").asArray().get(12).asInt() != 2){
+                    // Algoritmo de cálculo de movimiento 
                     TreeMap<Float,String> casillas = new TreeMap<Float,String>();
 
                     if (percepcionJson.get("radar").asArray().get(6).asInt() != 1){
@@ -203,15 +205,15 @@ public class Coche extends SingleAgent {
                     }
 
                     Map.Entry<Float,String> casillaResultado = casillas.firstEntry();
-
+                    
+                    contador++;
                     this.moverse("move"+casillaResultado.getValue());
                     bateria--;
                 } else {
                     // logout
                     System.out.println("Hemos llegado al objetivo"+percepcionJson);
-                    
-                    this.logout();
-                    
+                    salir = true;
+                    this.logout();    
                 }
             } catch (InterruptedException ex) {
                 System.out.println("Error al recibir mensaje");
@@ -229,6 +231,7 @@ public class Coche extends SingleAgent {
     */
     public void moverse(String aDonde) {
         
+        outObjetoJSON = new JsonObject();
         outObjetoJSON.add("command", aDonde);
         outObjetoJSON.add("key", this.clave);
         
@@ -249,7 +252,7 @@ public class Coche extends SingleAgent {
                 percepcionJson = Json.parse(inbox.getContent()).asObject();
                 System.out.println("perceptor:"+inbox.getContent());
                 inbox = this.receiveACLMessage(); // ok
-                contador++;
+                contadorP++;
             } 
             
             System.out.println("fueraPerceptor:"+inbox.getContent());
@@ -395,7 +398,8 @@ public class Coche extends SingleAgent {
     public void logout(){
         
         System.out.println("\nAgente("+this.getName()+") haciendo logout");
-        System.out.println("contador coche:"+contador);
+        System.out.println("contador cocheMove:"+contador);
+        System.out.println("contador cocheP:"+contadorP);
         JsonObject jsonLogout = new JsonObject();
         
         jsonLogout.add("command", "logout");
@@ -411,16 +415,45 @@ public class Coche extends SingleAgent {
             
             System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
             inbox = this.receiveACLMessage();
+            
+            for (int i=0; i<3; i++){
+                if (inbox.getContent().contains("trace")){
+                    inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                } else if (!inbox.getContent().contains("perceptor") && !inbox.getContent().contains("OK")){
+                    // ha ocurrido un fallo
+                }
+                inbox = this.receiveACLMessage();
+            }
+            
+            System.out.println("\nAgente("+this.getName()+") traza recibida, creando imagen");
+            this.crearImagen();
+
+            outbox = new ACLMessage();
+            outbox.setSender(this.getAid());
+            outbox.setReceiver(new AgentID(nombrePerceptor));
+            outbox.setContent("logout");
+            this.send(outbox);
+            
+            /*inbox = this.receiveACLMessage();
             inObjetoJSON = Json.parse(inbox.getContent()).asObject();
             
             if(inObjetoJSON.get("result").asString().equals("OK")){
                 
                 System.out.println("\nAgente("+this.getName()+") deslogueado");
                 
+                // comprobamos si hemos recibido traza o percepcion extra
                 inbox = this.receiveACLMessage();
+                
+                if (inbox.getContent().contains("perceptor")){
+                    inbox = this.receiveACLMessage();
+                    inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                } else {
+                    inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                    inbox = this.receiveACLMessage();
+                }
+                
                 System.out.println("percepcionJson:"+percepcionJson);
                 System.out.println("traza:"+inbox.getContent());
-                inObjetoJSON = Json.parse(inbox.getContent()).asObject();
                 
                 System.out.println("\nAgente("+this.getName()+") traza recibida, creando imagen");
                 this.crearImagen();
@@ -436,7 +469,7 @@ public class Coche extends SingleAgent {
                 if (!inbox.getContent().equals("OK")){
                     // ni idea
                 }*/
-            }
+            //}
             
             System.err.println("Fallo en la estructura del mensaje");
 
