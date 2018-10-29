@@ -39,7 +39,7 @@ public class Coche extends SingleAgent {
     
     String clave;
     String comando = "login";
-    String mapa = "map1";
+    String mapa = "map2";
     String nombrePerceptor;
     
     double bateria = 0.0;
@@ -110,6 +110,10 @@ public class Coche extends SingleAgent {
             inbox = this.receiveACLMessage();
             
             if (inbox.getContent().contains("trace")){
+                // Para ver la traza del último intento fallido
+                inObjetoJSON = Json.parse(inbox.getContent()).asObject(); 
+                this.crearImagen();
+                // Hasta aqui
                 inbox = this.receiveACLMessage();
             }
             
