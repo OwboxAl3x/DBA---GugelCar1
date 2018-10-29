@@ -31,6 +31,8 @@ public class Coche extends SingleAgent {
     
     JsonObject inObjetoJSON = new JsonObject();
     JsonObject outObjetoJSON = new JsonObject();
+    JsonObject percepcionJson = new JsonObject();
+    boolean percepcionRecibida = false;
   
     ACLMessage outbox = new ACLMessage();
     ACLMessage inbox = new ACLMessage();
@@ -38,11 +40,13 @@ public class Coche extends SingleAgent {
     String clave;
     String comando = "login";
     String mapa = "map1";
+    String nombrePerceptor = "sensor7";
     
     double bateria = 0.0;
     
     int x;
     int y;
+    int contador = 0;
     
     ArrayList<ArrayList<Integer>> mapaMemoria = new ArrayList<>();
     
@@ -88,9 +92,9 @@ public class Coche extends SingleAgent {
         //outObjetoJSON.add("command", "asd"); // Para cuando devuelve traza el servidor
         outObjetoJSON.add("command", comando);
         outObjetoJSON.add("world", mapa);
-        outObjetoJSON.add("radar", "sensor");
-        outObjetoJSON.add("scanner", "sensor");
-        outObjetoJSON.add("gps", "sensor");
+        outObjetoJSON.add("radar", nombrePerceptor);
+        outObjetoJSON.add("scanner", nombrePerceptor);
+        outObjetoJSON.add("gps", nombrePerceptor);
         
         outbox.setSender(this.getAid());
         outbox.setReceiver(new AgentID("Cerastes"));
@@ -102,7 +106,11 @@ public class Coche extends SingleAgent {
             System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
             
             inbox = this.receiveACLMessage();
-            System.out.println(inbox.getContent());
+            
+            if (inbox.getContent().contains("trace")){
+                inbox = this.receiveACLMessage();
+            }
+            
             inObjetoJSON = Json.parse(inbox.getContent()).asObject();  
             
             if(!inObjetoJSON.get("result").asString().equals("BAD_MAP") && !inObjetoJSON.get("result").asString().equals("BAD_PROTOCOL")){
@@ -142,17 +150,23 @@ public class Coche extends SingleAgent {
                 
                 // Recibimos el mensaje del perceptor
                 System.out.println("\nAgente("+this.getName()+") recibiendo percepción del perceptor");
-                inbox = this.receiveACLMessage();
-                JsonObject percepcionJson = Json.parse(inbox.getContent()).asObject();
-                  
+                
+                if (!percepcionRecibida){
+                    inbox = this.receiveACLMessage();
+                    percepcionJson = Json.parse(inbox.getContent()).asObject();
+                    contador++;
+                } else {
+                    percepcionRecibida = false;
+                }
+                 
                 // Actualiza el mapa en memoria
                 this.actualizarMapa(percepcionJson);
                 
-                outbox = new ACLMessage();
+                /*outbox = new ACLMessage();
                 outbox.setSender(this.getAid());
                 outbox.setReceiver(new AgentID("sensor"));
                 outbox.setContent("OK");
-                this.send(outbox);
+                this.send(outbox);*/
                 
                 
                 // *** Comprobar si tiene que hacer refuel
@@ -194,6 +208,8 @@ public class Coche extends SingleAgent {
                     bateria--;
                 } else {
                     // logout
+                    System.out.println("Hemos llegado al objetivo"+percepcionJson);
+                    
                     this.logout();
                     
                 }
@@ -227,6 +243,16 @@ public class Coche extends SingleAgent {
             
             System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
             inbox = this.receiveACLMessage();
+            
+            if (inbox.getContent().contains("perceptor")){
+                percepcionRecibida = true;
+                percepcionJson = Json.parse(inbox.getContent()).asObject();
+                System.out.println("perceptor:"+inbox.getContent());
+                inbox = this.receiveACLMessage(); // ok
+                contador++;
+            } 
+            
+            System.out.println("fueraPerceptor:"+inbox.getContent());
             inObjetoJSON = Json.parse(inbox.getContent()).asObject();
             
             if(!inObjetoJSON.get("result").asString().equals("BAD_KEY") && !inObjetoJSON.get("result").asString().equals("BAD_PROTOCOL") && !inObjetoJSON.get("result").asString().equals("BAD_COMMAND")){
@@ -369,6 +395,7 @@ public class Coche extends SingleAgent {
     public void logout(){
         
         System.out.println("\nAgente("+this.getName()+") haciendo logout");
+        System.out.println("contador coche:"+contador);
         JsonObject jsonLogout = new JsonObject();
         
         jsonLogout.add("command", "logout");
@@ -391,21 +418,24 @@ public class Coche extends SingleAgent {
                 System.out.println("\nAgente("+this.getName()+") deslogueado");
                 
                 inbox = this.receiveACLMessage();
+                System.out.println("percepcionJson:"+percepcionJson);
+                System.out.println("traza:"+inbox.getContent());
                 inObjetoJSON = Json.parse(inbox.getContent()).asObject();
+                
                 System.out.println("\nAgente("+this.getName()+") traza recibida, creando imagen");
                 this.crearImagen();
                 
                 outbox = new ACLMessage();
                 outbox.setSender(this.getAid());
-                outbox.setReceiver(new AgentID("sensor"));
+                outbox.setReceiver(new AgentID(nombrePerceptor));
                 outbox.setContent("logout");
                 this.send(outbox);
                 
-                inbox = this.receiveACLMessage();
+                /*inbox = this.receiveACLMessage();
 
                 if (!inbox.getContent().equals("OK")){
                     // ni idea
-                }
+                }*/
             }
             
             System.err.println("Fallo en la estructura del mensaje");

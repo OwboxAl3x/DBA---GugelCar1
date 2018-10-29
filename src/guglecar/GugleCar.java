@@ -28,8 +28,8 @@ public class GugleCar {
         
         try {
             
-            car = new Coche(new AgentID("car"));
-            sensor = new Perceptor(new AgentID("sensor"));
+            car = new Coche(new AgentID("car7"));
+            sensor = new Perceptor(new AgentID("sensor7"));
             
         } catch (Exception ex) {
             

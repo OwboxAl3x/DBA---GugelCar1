@@ -30,7 +30,10 @@ public class Perceptor extends SingleAgent {
     float scanner[];
     int radar[];
     int posX, posY;
+    int contador = 0;
     boolean fin;
+    
+    String nombreCoche = "car7";
     
     public Perceptor(AgentID aid) throws Exception  {
         super(aid);
@@ -90,8 +93,9 @@ public class Perceptor extends SingleAgent {
                 
                 // Recibimos las percepciones y combinamos los JSON
                 inbox = this.receiveACLMessage();
+                System.out.println("perceptor contador:"+contador+ " y el mensaje:"+inbox.getContent());
                 
-                if (!inbox.getContent().equals("logout")){
+                if (!inbox.getContent().contains("logout")){
                     inObjetoJSON = Json.parse(inbox.getContent()).asObject();
                     outObjetoJSON.merge(inObjetoJSON);
 
@@ -102,32 +106,35 @@ public class Perceptor extends SingleAgent {
                     inbox = this.receiveACLMessage();
                     inObjetoJSON = Json.parse(inbox.getContent()).asObject();
                     outObjetoJSON.merge(inObjetoJSON);
-
+                    
                     if(inbox.getContent().contains("CRASHED")){
 
                         System.err.println("El vehiculo ha chocado");  
                         this.fin = true;
                     } else {
+                        outObjetoJSON.add("perceptor","si");
                         outbox.setSender(this.getAid());
-                        outbox.setReceiver(new AgentID("car"));
+                        outbox.setReceiver(new AgentID(nombreCoche));
                         outbox.setContent(outObjetoJSON.toString());
                         this.send(outbox);
-
-                        inbox = this.receiveACLMessage(); // aqui recibe mensaje de percepcion, y acaba provocando crasheo más adelante
+                        contador++;
+                        System.out.println("contador perceptor"+contador);
+                        /*inbox = this.receiveACLMessage(); // aqui recibe mensaje de percepcion, y acaba provocando crasheo más adelante
                         System.out.println("valor de fin:"+this.fin+"valor inbox: "+inbox.getContent());
                         if (!inbox.getContent().contains("OK")){
 
                             // no estoy seguro de que hacer ***
 
-                        }
+                        }*/
 
                     }  
                 } else {
+                    /*System.out.println("\nAgente("+this.getName()+") obteniendo logout del coche");
                     outbox.setSender(this.getAid());
-                    outbox.setReceiver(new AgentID("car"));
+                    outbox.setReceiver(new AgentID(nombreCoche));
                     outbox.setContent("OK");
-                    this.send(outbox);
-                    
+                    this.send(outbox);*/
+                    System.out.println("contador perceptor"+contador);
                     this.fin = true;
                 }
 
