@@ -27,8 +27,8 @@ public class GugleCar {
         AgentsConnection.connect("isg2.ugr.es", 6000, "Cerastes", "Boyero", "Carducci", false);
         
         try {
-            String nombreCoche = "car22";
-            String nombrePerceptor = "sensor22";
+            String nombreCoche = "car1";
+            String nombrePerceptor = "sensor2";
             
             car = new Coche(new AgentID(nombreCoche),nombrePerceptor);
             sensor = new Perceptor(new AgentID(nombrePerceptor),nombreCoche);

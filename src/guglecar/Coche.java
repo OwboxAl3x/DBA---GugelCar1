@@ -29,17 +29,15 @@ import java.util.logging.Logger;
  */
 public class Coche extends SingleAgent {
     
-    JsonObject inObjetoJSON = new JsonObject();
-    JsonObject outObjetoJSON = new JsonObject();
+
     JsonObject percepcionJson = new JsonObject();
     boolean percepcionRecibida = false;
   
     ACLMessage outbox = new ACLMessage();
-    ACLMessage inbox = new ACLMessage();
     
     String clave;
     String comando = "login";
-    String mapa = "map2";
+    String mapa = "map1";
     String nombrePerceptor;
     
     double bateria = 0.0;
@@ -78,6 +76,8 @@ public class Coche extends SingleAgent {
         
        System.out.println("\nAgente("+this.getName()+") haciendo el login en el servidor");
        this.logearse();
+       
+       this.calcularAccion();
         
     }
     
@@ -91,45 +91,50 @@ public class Coche extends SingleAgent {
     */
     public void logearse() {
         
+        JsonObject jsonLogin = new JsonObject();
+        
         //outObjetoJSON.add("command", "asd"); // Para cuando devuelve traza el servidor
-        outObjetoJSON.add("command", comando);
-        outObjetoJSON.add("world", mapa);
-        outObjetoJSON.add("radar", nombrePerceptor);
-        outObjetoJSON.add("scanner", nombrePerceptor);
-        outObjetoJSON.add("gps", nombrePerceptor);
+        jsonLogin.add("command", comando);
+        jsonLogin.add("world", mapa);
+        jsonLogin.add("radar", nombrePerceptor);
+        jsonLogin.add("scanner", nombrePerceptor);
+        jsonLogin.add("gps", nombrePerceptor);
         
         outbox.setSender(this.getAid());
         outbox.setReceiver(new AgentID("Cerastes"));
-        outbox.setContent(outObjetoJSON.toString());
+        outbox.setContent(jsonLogin.toString());
         this.send(outbox);
         
+        JsonObject inJsonLogin = null;
+        
         try {
-            
+              
             System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
             
-            inbox = this.receiveACLMessage();
+            ACLMessage inboxLogin = this.receiveACLMessage();
             
-            if (inbox.getContent().contains("trace")){
+            
+            if (inboxLogin.getContent().contains("trace")){
                 // Para ver la traza del último intento fallido
-                inObjetoJSON = Json.parse(inbox.getContent()).asObject(); 
-                this.crearImagen();
+                inJsonLogin = Json.parse(inboxLogin.getContent()).asObject(); 
+                this.crearImagen(inJsonLogin);
                 // Hasta aqui
-                inbox = this.receiveACLMessage();
+                
+                inboxLogin = this.receiveACLMessage();
             }
             
-            inObjetoJSON = Json.parse(inbox.getContent()).asObject();  
             
-            if(!inObjetoJSON.get("result").asString().equals("BAD_MAP") && !inObjetoJSON.get("result").asString().equals("BAD_PROTOCOL")){
-                
-                this.clave = inObjetoJSON.get("result").asString();
+            inJsonLogin = Json.parse(inboxLogin.getContent()).asObject();  
+            
+            if(!inJsonLogin.get("result").asString().equals("BAD_MAP") && !inJsonLogin.get("result").asString().equals("BAD_PROTOCOL")){
+                System.out.println("Login: "+inJsonLogin);
+                this.clave = inJsonLogin.get("result").asString();
                 System.out.println("\nAgente("+this.getName()+") logueado");
-                this.calcularAccion();
-                
+
+            }else{
+                System.err.println("Fallo en el mapa o en la estructura del mensaje");
+                this.logout();
             }
-            
-            System.err.println("Fallo en el mapa o en la estructura del mensaje");
-            
-            //Finalizar Perceptor
             
         } catch (InterruptedException ex) {
             
@@ -159,22 +164,15 @@ public class Coche extends SingleAgent {
                 System.out.println("contador cocheMove:"+contador);
                 System.out.println("contador cocheP:"+contadorP);
                 if (!percepcionRecibida){
-                    inbox = this.receiveACLMessage();
-                    percepcionJson = Json.parse(inbox.getContent()).asObject();
+                    ACLMessage inboxAccion = this.receiveACLMessage();
+                    percepcionJson = Json.parse(inboxAccion.getContent()).asObject();
                     contadorP++;
                 } else {
                     percepcionRecibida = false;
                 }
                  
                 // Actualiza el mapa en memoria
-                this.actualizarMapa(percepcionJson);
-                
-                /*outbox = new ACLMessage();
-                outbox.setSender(this.getAid());
-                outbox.setReceiver(new AgentID("sensor"));
-                outbox.setContent("OK");
-                this.send(outbox);*/
-                
+                this.actualizarMapa(percepcionJson); 
                 
                 // *** Comprobar si tiene que hacer refuel
                  if(bateria <= 1.0){
@@ -235,7 +233,7 @@ public class Coche extends SingleAgent {
     */
     public void moverse(String aDonde) {
         
-        outObjetoJSON = new JsonObject();
+        JsonObject outObjetoJSON = new JsonObject();
         outObjetoJSON.add("command", aDonde);
         outObjetoJSON.add("key", this.clave);
         
@@ -249,22 +247,22 @@ public class Coche extends SingleAgent {
         try {
             
             System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
-            inbox = this.receiveACLMessage();
+            ACLMessage inboxMover = this.receiveACLMessage();
             
-            if (inbox.getContent().contains("perceptor")){
+            if (inboxMover.getContent().contains("perceptor")){
                 percepcionRecibida = true;
-                percepcionJson = Json.parse(inbox.getContent()).asObject();
-                System.out.println("perceptor:"+inbox.getContent());
-                inbox = this.receiveACLMessage(); // ok
+                percepcionJson = Json.parse(inboxMover.getContent()).asObject();
+                System.out.println("perceptor:"+inboxMover.getContent());
+                inboxMover = this.receiveACLMessage(); // ok
                 contadorP++;
             } 
+            JsonObject inJsonMover = null;
+            System.out.println("fueraPerceptor:"+inboxMover.getContent());
+            inJsonMover = Json.parse(inboxMover.getContent()).asObject();
             
-            System.out.println("fueraPerceptor:"+inbox.getContent());
-            inObjetoJSON = Json.parse(inbox.getContent()).asObject();
-            
-            if(!inObjetoJSON.get("result").asString().equals("BAD_KEY") && !inObjetoJSON.get("result").asString().equals("BAD_PROTOCOL") && !inObjetoJSON.get("result").asString().equals("BAD_COMMAND")){
+            if(!inJsonMover.get("result").asString().equals("BAD_KEY") && !inJsonMover.get("result").asString().equals("BAD_PROTOCOL") && !inJsonMover.get("result").asString().equals("BAD_COMMAND")){
                 
-                if(!inObjetoJSON.get("result").asString().equals("CRASHED")){
+                if(!inJsonMover.get("result").asString().equals("CRASHED")){
                     
                     System.out.println("\nAgente("+this.getName()+") se ha movido");
                     
@@ -273,16 +271,17 @@ public class Coche extends SingleAgent {
                     System.out.println("\nAgente("+this.getName()+") se ha chocado o se ha quedado sin bateria");
                     
                     //Desloguearse y avisar al Perceptor para que se cierre
+                    this.logout();
                     
                     
                 }
                 
+                
+            }else{
+                //Desloguearse y avisar al Perceptor para que se cierre
+                System.err.println("Fallo en la estructura del mensaje");
+                this.logout();
             }
-            
-            System.err.println("Fallo en la estructura del mensaje");
-            
-            //Desloguearse y avisar al Perceptor para que se cierre
-            
             
         } catch (InterruptedException ex) {
             
@@ -372,18 +371,20 @@ public class Coche extends SingleAgent {
         outbox.setContent(jsonRefuel.toString());
         this.send(outbox);
 
+        JsonObject inJsonRefuel = null;
         try {
             
             System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
-            inbox = this.receiveACLMessage();
-            inObjetoJSON = Json.parse(inbox.getContent()).asObject();
-            
-            if(inObjetoJSON.get("result").asString().equals("OK")){
+            ACLMessage inboxRefuel = this.receiveACLMessage();
+            inJsonRefuel = Json.parse(inboxRefuel.getContent()).asObject();
+         
+            if(inJsonRefuel.get("result").asString().equals("OK")){
                 
                 System.out.println("\nAgente("+this.getName()+") a tope de bateria");
                 this.bateria = 99.0;
             } else {
                 System.err.println("Fallo en la estructura del mensaje");
+                this.logout();
             }
             
         } catch (InterruptedException ex) {
@@ -414,23 +415,23 @@ public class Coche extends SingleAgent {
         outbox.setReceiver(new AgentID("Cerastes"));
         outbox.setContent(jsonLogout.toString());
         this.send(outbox);
-
+        
+        JsonObject inJsonLogout = null;
         try {
-            
             System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
-            inbox = this.receiveACLMessage();
+            ACLMessage inboxLogout = this.receiveACLMessage();
             
             for (int i=0; i<3; i++){
-                if (inbox.getContent().contains("trace")){
-                    inObjetoJSON = Json.parse(inbox.getContent()).asObject();
-                } else if (!inbox.getContent().contains("perceptor") && !inbox.getContent().contains("OK")){
+                if (inboxLogout.getContent().contains("trace")){
+                    inJsonLogout = Json.parse(inboxLogout.getContent()).asObject();
+                } else if (!inboxLogout.getContent().contains("perceptor") && !inboxLogout.getContent().contains("OK")){
                     // ha ocurrido un fallo
                 }
-                inbox = this.receiveACLMessage();
+                inboxLogout = this.receiveACLMessage();
             }
             
             System.out.println("\nAgente("+this.getName()+") traza recibida, creando imagen");
-            this.crearImagen();
+            this.crearImagen(inJsonLogout);
 
             outbox = new ACLMessage();
             outbox.setSender(this.getAid());
@@ -438,50 +439,10 @@ public class Coche extends SingleAgent {
             outbox.setContent("logout");
             this.send(outbox);
             
-            /*inbox = this.receiveACLMessage();
-            inObjetoJSON = Json.parse(inbox.getContent()).asObject();
             
-            if(inObjetoJSON.get("result").asString().equals("OK")){
-                
-                System.out.println("\nAgente("+this.getName()+") deslogueado");
-                
-                // comprobamos si hemos recibido traza o percepcion extra
-                inbox = this.receiveACLMessage();
-                
-                if (inbox.getContent().contains("perceptor")){
-                    inbox = this.receiveACLMessage();
-                    inObjetoJSON = Json.parse(inbox.getContent()).asObject();
-                } else {
-                    inObjetoJSON = Json.parse(inbox.getContent()).asObject();
-                    inbox = this.receiveACLMessage();
-                }
-                
-                System.out.println("percepcionJson:"+percepcionJson);
-                System.out.println("traza:"+inbox.getContent());
-                
-                System.out.println("\nAgente("+this.getName()+") traza recibida, creando imagen");
-                this.crearImagen();
-                
-                outbox = new ACLMessage();
-                outbox.setSender(this.getAid());
-                outbox.setReceiver(new AgentID(nombrePerceptor));
-                outbox.setContent("logout");
-                this.send(outbox);
-                
-                /*inbox = this.receiveACLMessage();
 
-                if (!inbox.getContent().equals("OK")){
-                    // ni idea
-                }*/
-            //}
-            
-            System.err.println("Fallo en la estructura del mensaje");
-
-            
         } catch (InterruptedException ex) {
-            
-            System.err.println("Error al hacer el logout");
-            
+            System.err.println("Error al hacer el logout"); 
         }
     }
     
@@ -489,10 +450,12 @@ public class Coche extends SingleAgent {
      * Crea una imagen a partir de la traza
      * 
      * @author Manuel Ros Rodríguez
+     * @param inJsonImagen
      */
-    public void crearImagen(){
+    public void crearImagen(JsonObject inJsonImagen){
+        
         try {
-            JsonArray array = inObjetoJSON.get("trace").asArray();
+            JsonArray array = inJsonImagen.get("trace").asArray();
             byte data[] = new byte [array.size()];
             for (int i=0; i<data.length; i++){
                     data[i] = (byte) array.get(i).asInt();
