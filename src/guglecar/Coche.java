@@ -37,7 +37,7 @@ public class Coche extends SingleAgent {
     
     String clave;
     String comando = "login";
-    String mapa = "map10";
+    String mapa = "map9";
     String nombrePerceptor;
     
     double bateria = 0.0;
