@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  * 
  * Clase que hereda de SingleAgent, que controla al agente coche.
  *
- * @author Adrian
+ * @author Adrian Martin
  * @author Alejandro García
  */
 public class Coche extends SingleAgent {
@@ -37,7 +37,7 @@ public class Coche extends SingleAgent {
     
     String clave;
     String comando = "login";
-    String mapa = "map1";
+    String mapa = "map10";
     String nombrePerceptor;
     
     double bateria = 0.0;
@@ -57,7 +57,7 @@ public class Coche extends SingleAgent {
     
     /**
     *
-    * @author Adrian
+    * @author Adrian Martin
     * @author Alejandro García
     */
     @Override
@@ -69,7 +69,7 @@ public class Coche extends SingleAgent {
     
     /**
     *
-    * @author Adrian
+    * @author Adrian Martin
     * @author Alejandro García
     */
     @Override
@@ -177,41 +177,70 @@ public class Coche extends SingleAgent {
                 this.actualizarMapaPasos(percepcionJson); 
                 
                 // *** Comprobar si tiene que hacer refuel
-                 if(bateria <= 1.0){
+                if(bateria <= 1.0){
                     refuel();
-                } else if (percepcionJson.get("radar").asArray().get(12).asInt() != 2){
+                }else if (percepcionJson.get("radar").asArray().get(12).asInt() != 2){
                     // Algoritmo de cálculo de movimiento 
+                    int minimo = Integer.MAX_VALUE;
+                    
                     TreeMap<Float,String> casillas = new TreeMap<Float,String>();
 
                     if (percepcionJson.get("radar").asArray().get(6).asInt() != 1){
-                        casillas.put(percepcionJson.get("scanner").asArray().get(6).asFloat(), "NW");
+                        if(minimo >= this.getValorPasos(percepcionJson,6)){
+                            minimo = this.getValorPasos(percepcionJson,6);
+                            casillas.put(percepcionJson.get("scanner").asArray().get(6).asFloat(), "NW");
+                        }
                     }
                     if (percepcionJson.get("radar").asArray().get(7).asInt() != 1){
-                        casillas.put(percepcionJson.get("scanner").asArray().get(7).asFloat(), "N");
+                        if(minimo >= this.getValorPasos(percepcionJson, 7)){
+                            minimo = this.getValorPasos(percepcionJson, 7);
+                            casillas.put(percepcionJson.get("scanner").asArray().get(7).asFloat(), "N");
+                        }
                     }
                     if (percepcionJson.get("radar").asArray().get(8).asInt() != 1){
-                        casillas.put(percepcionJson.get("scanner").asArray().get(8).asFloat(), "NE");
+                        if(minimo >= this.getValorPasos(percepcionJson, 8)){
+                            minimo = this.getValorPasos(percepcionJson, 8);
+                            casillas.put(percepcionJson.get("scanner").asArray().get(8).asFloat(), "NE");
+                        }
                     }
                     if (percepcionJson.get("radar").asArray().get(11).asInt() != 1){
-                        casillas.put(percepcionJson.get("scanner").asArray().get(11).asFloat(), "W");
+                        if(minimo >= this.getValorPasos(percepcionJson, 11)){
+                            minimo = this.getValorPasos(percepcionJson, 11);
+                            casillas.put(percepcionJson.get("scanner").asArray().get(11).asFloat(), "W");
+                        }
                     }
                     if (percepcionJson.get("radar").asArray().get(13).asInt() != 1){
-                        casillas.put(percepcionJson.get("scanner").asArray().get(13).asFloat(), "E");
+                        if(minimo >= this.getValorPasos(percepcionJson, 13)){
+                            minimo = this.getValorPasos(percepcionJson, 13);
+                            casillas.put(percepcionJson.get("scanner").asArray().get(13).asFloat(), "E");
+                        } 
                     }
                     if (percepcionJson.get("radar").asArray().get(16).asInt() != 1){
-                        casillas.put(percepcionJson.get("scanner").asArray().get(16).asFloat(), "SW");
+                        if(minimo >= this.getValorPasos(percepcionJson, 16)){
+                            minimo = this.getValorPasos(percepcionJson, 16);
+                            casillas.put(percepcionJson.get("scanner").asArray().get(16).asFloat(), "SW");
+                        }
                     }
                     if (percepcionJson.get("radar").asArray().get(17).asInt() != 1){
-                        casillas.put(percepcionJson.get("scanner").asArray().get(17).asFloat(), "S");
+                        if(minimo >= this.getValorPasos(percepcionJson, 17)){
+                            minimo = this.getValorPasos(percepcionJson, 17);
+                            casillas.put(percepcionJson.get("scanner").asArray().get(17).asFloat(), "S");
+                        }
                     }
                     if (percepcionJson.get("radar").asArray().get(18).asInt() != 1){
-                        casillas.put(percepcionJson.get("scanner").asArray().get(18).asFloat(), "SE");
+                        if(minimo >= this.getValorPasos(percepcionJson, 18)){
+                            minimo = this.getValorPasos(percepcionJson, 18);
+                            casillas.put(percepcionJson.get("scanner").asArray().get(18).asFloat(), "SE");
+                        }
                     }
 
                     Map.Entry<Float,String> casillaResultado = casillas.firstEntry();
                     
                     contador++;
+                    System.out.println("SE MUEVE: "+casillaResultado.getValue());
+                    
                     this.moverse("move"+casillaResultado.getValue());
+                    
                     bateria--;
                 } else {
                     // logout
@@ -292,7 +321,47 @@ public class Coche extends SingleAgent {
         }
         
     }
+    /*
+    * @author Adrian Martin 
+    * 
+    */
     
+    public int getValorPasos(JsonObject percepcion, int celda) {
+        // Coordenadas de posición
+        x = percepcion.get("gps").asObject().get("x").asInt();
+        y = percepcion.get("gps").asObject().get("y").asInt();
+        
+        int valor = Integer.MAX_VALUE;
+        switch (celda){
+            case 6:
+                valor = this.mapaPasos.get(y-1).get(x-1);
+                break;
+            case 7:
+                valor = this.mapaPasos.get(y-1).get(x);
+                break;
+            case 8:
+                valor = this.mapaPasos.get(y-1).get(x+1);
+                break;
+            case 11:
+                valor = this.mapaPasos.get(y).get(x-1);
+                break;
+            case 13:
+                valor = this.mapaPasos.get(y).get(x+1);
+                break;
+            case 16:
+                valor = this.mapaPasos.get(y+1).get(x-1);
+                break;
+            case 17:
+                valor = this.mapaPasos.get(y+1).get(x);
+                break;
+            case 18:
+                valor = this.mapaPasos.get(y+1).get(x+1);
+                break;
+            
+            
+        }
+        return valor;
+    }
     /**
      * Actualiza el mapa en la memoria. Las casillas desconocidas se representan
      * con el valor -1.
@@ -526,7 +595,7 @@ public class Coche extends SingleAgent {
     
     /**
     *
-    * @author Adrian
+    * @author Adrian Martin
     * @author Alejandro García
     */
     @Override
