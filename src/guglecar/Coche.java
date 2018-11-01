@@ -48,6 +48,7 @@ public class Coche extends SingleAgent {
     int contadorP = 0;
     
     ArrayList<ArrayList<Integer>> mapaMemoria = new ArrayList<>();
+    ArrayList<ArrayList<Integer>> mapaPasos = new ArrayList<>();
     
     public Coche(AgentID aid, String nombrePerceptor) throws Exception  {
         super(aid);
@@ -171,8 +172,9 @@ public class Coche extends SingleAgent {
                     percepcionRecibida = false;
                 }
                  
-                // Actualiza el mapa en memoria
+                // Actualiza el mapa en memoria y el mapa de los pasos
                 this.actualizarMapa(percepcionJson); 
+                this.actualizarMapaPasos(percepcionJson); 
                 
                 // *** Comprobar si tiene que hacer refuel
                  if(bateria <= 1.0){
@@ -349,6 +351,57 @@ public class Coche extends SingleAgent {
                 fila.add(-1);
             }
             mapaMemoria.add(fila);
+        }
+    }
+    
+    
+    /**
+     * Actualiza el mapa de los pasos. Cada casilla contiene el número de veces
+     * que se ha pasado por ella.
+     * @author Fernando Ruiz Hernández
+     * @param percepcion Objeto JSON con la percepción recibida
+     */
+    public void actualizarMapaPasos(JsonObject percepcion) {
+        // Coordenadas de posición
+        x = percepcion.get("gps").asObject().get("x").asInt();
+        y = percepcion.get("gps").asObject().get("y").asInt();
+        
+        // Ajustar tamaño del mapa si es necesario
+        int sizeNuevo = x + 3;
+        if (sizeNuevo < y + 3)
+            sizeNuevo = y + 3;
+        if (sizeNuevo > mapaPasos.size())
+            this.extenderMapaPasos(sizeNuevo);
+        
+        // Actualizar casillas
+        int casilla_valor = mapaPasos.get(y).get(x);
+        mapaPasos.get(y).set(x, casilla_valor+1);
+    }
+    
+    /**
+     * Extiende el tamaño del mapa de pasos. Se rellena con el valor 0.
+     * 
+     * @author Fernando Ruiz Hernández
+     * @param sizeNuevo Tamaño nuevo
+     */
+    public void extenderMapaPasos(int sizeNuevo) {
+        int size = mapaPasos.size();
+        
+        // Extender filas existentes
+        for (int i=0; i<size; i++) {
+            for (int j=size; j<sizeNuevo; j++) {
+                mapaPasos.get(i).add(0);
+            }
+        }
+
+        // Añadir nuevas filas
+        ArrayList<Integer> fila;
+        for (int i=size; i<sizeNuevo; i++) {
+            fila = new ArrayList<>();
+            for (int j=0; j<sizeNuevo; j++) {
+                fila.add(0);
+            }
+            mapaPasos.add(fila);
         }
     }
     
