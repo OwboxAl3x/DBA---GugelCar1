@@ -37,7 +37,7 @@ public class Coche extends SingleAgent {
     
     String clave;
     String comando = "login";
-    String mapa = "map9";
+    String mapa = "map11";
     String nombrePerceptor;
     
     double bateria = 0.0;
@@ -46,6 +46,8 @@ public class Coche extends SingleAgent {
     int y;
     int contador = 0;
     int contadorP = 0;
+    
+    boolean metaEncontrada = false;
     
     ArrayList<ArrayList<Integer>> mapaMemoria = new ArrayList<>();
     ArrayList<ArrayList<Integer>> mapaPasos = new ArrayList<>();
@@ -178,7 +180,15 @@ public class Coche extends SingleAgent {
                 
                 // *** Comprobar si tiene que hacer refuel
                 if(bateria <= 1.0){
-                    refuel();
+                    if (this.comprobarMeta()) {
+                        System.out.println("Meta alcanzable");
+                        refuel();
+                    }
+                    else {
+                        System.out.println("Meta no alcanzable");
+                        salir = true;
+                        this.logout();
+                    }
                 }else if (percepcionJson.get("radar").asArray().get(12).asInt() != 2){
                     // Algoritmo de cálculo de movimiento 
                     int minimo = Integer.MAX_VALUE;
@@ -425,6 +435,8 @@ public class Coche extends SingleAgent {
             for (int j=0; j<5; j++) {
                 casilla_x = x + j - 2;
                 casilla_valor = percepcion.get("radar").asArray().get(i*5 + j).asInt();
+                if (casilla_valor == 2)
+                    metaEncontrada = true;
                 if (casilla_x >= 0 && casilla_y >= 0)
                     mapaMemoria.get(casilla_y).set(casilla_x, casilla_valor);
             }
@@ -507,6 +519,102 @@ public class Coche extends SingleAgent {
             }
             mapaPasos.add(fila);
         }
+    }
+    
+    /**
+     * Comprueba si la meta es alcanzable, es decir, si hay algún camino entre
+     * la meta y el coche.
+     * 
+     * @author Fernando Ruiz Hernández
+     * @return true si la meta es alcanzable, false si no lo es
+     */
+    public boolean comprobarMeta() {
+        if (!metaEncontrada)
+            return true;
+        
+        ArrayList<ArrayList<Integer>> mapaMeta = new ArrayList<>();
+        
+        int size = mapaMemoria.size();
+        int casilla_valor;
+        
+        // Añadir nuevas filas        
+        ArrayList<Integer> fila;
+        for (int i=0; i<size; i++) {
+            fila = new ArrayList<>();
+            for (int j=0; j<size; j++) {
+                casilla_valor = mapaMemoria.get(i).get(j);
+                if (casilla_valor == 1)
+                    fila.add(1);
+                else if (casilla_valor == 2)
+                    fila.add(2);
+                else
+                    fila.add(0);
+            }
+            fila.add(0); // Columna adicional
+            mapaMeta.add(fila);
+        }
+        // Fila adicional
+        fila = new ArrayList<>();
+        for (int j=0; j<size+1; j++)
+            fila.add(0);
+        mapaMeta.add(fila);
+        
+        // Actualizamos size por la columna y fila adicionales
+        size = size + 1;
+        
+        // Valor del jugador en mapaMeta : 9
+        if (mapaMemoria.get(y).get(x) == 2)
+            return true;
+        mapaMeta.get(y).set(x, 9);
+        
+        boolean salir = false;
+        
+        // casillaVecina
+        int casillaV_valor;
+        int casillaV_x;
+        int casillaV_y;
+        
+        int expansiones;
+        
+        while (!salir) {
+            for (int i=0; i<size; i++) {
+                for (int j=0; j<size; j++) {
+                    casilla_valor = mapaMeta.get(i).get(j);
+                    if (casilla_valor == 2) {
+                        for (int ci=-1; ci<=1; ci++) {
+                            casillaV_y = i+ci;
+                            for (int cj=-1; cj<=1; cj++) {
+                                casillaV_x = j+cj;
+                                if (casillaV_x >= 0 && casillaV_x < size && casillaV_y >= 0 && casillaV_y < size) {
+                                    casillaV_valor = mapaMeta.get(casillaV_y).get(casillaV_x);
+                                    if (casillaV_valor == 9)
+                                        return true;
+                                    if (casillaV_valor == 0)
+                                        mapaMeta.get(casillaV_y).set(casillaV_x, 4);
+                                }
+                            }
+                        }
+                        mapaMeta.get(i).set(j, 3);
+                    }
+                }
+            }
+            
+            expansiones = 0;
+            for (int i=0; i<size; i++) {
+                for (int j=0; j<size; j++) {
+                    casilla_valor = mapaMeta.get(i).get(j);
+                    if (casilla_valor == 4) {
+                        mapaMeta.get(i).set(j, 2);
+                        expansiones++;
+                    }
+                }
+            }
+            
+            if (expansiones == 0)
+                salir = true;
+        }
+        
+        return false;
     }
     
     /**
