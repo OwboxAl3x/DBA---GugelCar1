@@ -27,11 +27,6 @@ public class Perceptor extends SingleAgent {
     ACLMessage inbox;
     ACLMessage outbox;
     
-    float scanner[];
-    int radar[];
-    int posX, posY;
-    int contador = 0;
-    int contadorP = 0;
     boolean fin;
     
     String nombreCoche;
@@ -57,8 +52,6 @@ public class Perceptor extends SingleAgent {
         inbox = new ACLMessage();
         outbox = new ACLMessage();
         
-        scanner = new float[25];
-        radar = new int[25];
         fin = false;
              
     }
@@ -87,14 +80,9 @@ public class Perceptor extends SingleAgent {
          
         while(!fin){    
             try {    
-                // Suponiendo que se recibe un mensaje distinto con cada percepción, por tanto 3 mensajes
-                // Falta tener en cuenta el caso donde recibe un mensaje de logout del coche
-                System.out.println("\nAgente("+this.getName()+") obteniendo percepción del servidor");
-                
+                // Suponiendo que se recibe un mensaje distinto con cada percepción, por tanto 3 mensajes                
                 // Recibimos las percepciones y combinamos los JSON
                 inbox = this.receiveACLMessage();
-                System.out.println("fin vale:"+fin+" y perceptor contador:"+contador+ " y el mensaje:"+inbox.getContent());
-                System.out.println("sender:"+inbox.getSender()+" y yo:"+this.getAid());
                 
                 if (!inbox.getContent().contains("logout")){
                     inObjetoJSON = Json.parse(inbox.getContent()).asObject();
@@ -119,24 +107,8 @@ public class Perceptor extends SingleAgent {
                         outbox.setContent(outObjetoJSON.toString());
                         this.send(outbox);
                         outObjetoJSON = new JsonObject();
-                        contador++;
-                        System.out.println("contador perceptor"+contador);
-                        /*inbox = this.receiveACLMessage(); // aqui recibe mensaje de percepcion, y acaba provocando crasheo más adelante
-                        System.out.println("valor de fin:"+this.fin+"valor inbox: "+inbox.getContent());
-                        if (!inbox.getContent().contains("OK")){
-
-                            // no estoy seguro de que hacer ***
-
-                        }*/
-
                     }  
                 } else {
-                    /*System.out.println("\nAgente("+this.getName()+") obteniendo logout del coche");
-                    outbox.setSender(this.getAid());
-                    outbox.setReceiver(new AgentID(nombreCoche));
-                    outbox.setContent("OK");
-                    this.send(outbox);*/
-                    System.out.println("contador perceptor"+contador);
                     this.fin = true;
                 }
             } catch (InterruptedException ex) {
@@ -145,9 +117,6 @@ public class Perceptor extends SingleAgent {
 
             }
         }
-            
-       
-        
     }
     
     /**

@@ -37,7 +37,7 @@ public class Coche extends SingleAgent {
     
     String clave;
     String comando = "login";
-    String mapa = "map11";
+    String mapa = "map8";
     String nombrePerceptor;
     
     double bateria = 0.0;
@@ -45,7 +45,6 @@ public class Coche extends SingleAgent {
     int x;
     int y;
     int contador = 0;
-    int contadorP = 0;
     
     boolean metaEncontrada = false;
     
@@ -96,7 +95,6 @@ public class Coche extends SingleAgent {
         
         JsonObject jsonLogin = new JsonObject();
         
-        //outObjetoJSON.add("command", "asd"); // Para cuando devuelve traza el servidor
         jsonLogin.add("command", comando);
         jsonLogin.add("world", mapa);
         jsonLogin.add("radar", nombrePerceptor);
@@ -111,7 +109,6 @@ public class Coche extends SingleAgent {
         JsonObject inJsonLogin = null;
         
         try {
-              
             System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
             
             ACLMessage inboxLogin = this.receiveACLMessage();
@@ -162,14 +159,13 @@ public class Coche extends SingleAgent {
             
             try {
                 
+                if (contador%10 == 0)
+                    System.out.println("Contador movimientos: "+contador);
+                
                 // Recibimos el mensaje del perceptor
-                System.out.println("\nAgente("+this.getName()+") recibiendo percepción del perceptor");
-                System.out.println("contador cocheMove:"+contador);
-                System.out.println("contador cocheP:"+contadorP);
                 if (!percepcionRecibida){
                     ACLMessage inboxAccion = this.receiveACLMessage();
                     percepcionJson = Json.parse(inboxAccion.getContent()).asObject();
-                    contadorP++;
                 } else {
                     percepcionRecibida = false;
                 }
@@ -181,11 +177,10 @@ public class Coche extends SingleAgent {
                 // *** Comprobar si tiene que hacer refuel
                 if(bateria <= 1.0){
                     if (this.comprobarMeta()) {
-                        System.out.println("Meta alcanzable");
                         refuel();
                     }
                     else {
-                        System.out.println("Meta no alcanzable");
+                        System.out.println("El objetivo no es alcanzable.");
                         salir = true;
                         this.logout();
                     }
@@ -282,14 +277,13 @@ public class Coche extends SingleAgent {
                     Map.Entry<Float,String> casillaResultado = casillas.firstEntry();
                     
                     contador++;
-                    System.out.println("SE MUEVE: "+casillaResultado.getValue());
                     
                     this.moverse("move"+casillaResultado.getValue());
                     
                     bateria--;
                 } else {
                     // logout
-                    System.out.println("Hemos llegado al objetivo"+percepcionJson);
+                    System.out.println("Hemos llegado al objetivo.");
                     salir = true;
                     this.logout();    
                 }
@@ -317,41 +311,30 @@ public class Coche extends SingleAgent {
         outbox.setReceiver(new AgentID("Cerastes"));
         outbox.setContent(outObjetoJSON.toString());
         
-        System.out.println("\nAgente("+this.getName()+") enviando movimiento al servidor");
         this.send(outbox);
         
         try {
             
-            System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
             ACLMessage inboxMover = this.receiveACLMessage();
             
             if (inboxMover.getContent().contains("perceptor")){
                 percepcionRecibida = true;
                 percepcionJson = Json.parse(inboxMover.getContent()).asObject();
-                System.out.println("perceptor:"+inboxMover.getContent());
                 inboxMover = this.receiveACLMessage(); // ok
-                contadorP++;
             } 
             JsonObject inJsonMover = null;
-            System.out.println("fueraPerceptor:"+inboxMover.getContent());
             inJsonMover = Json.parse(inboxMover.getContent()).asObject();
             
             if(!inJsonMover.get("result").asString().equals("BAD_KEY") && !inJsonMover.get("result").asString().equals("BAD_PROTOCOL") && !inJsonMover.get("result").asString().equals("BAD_COMMAND")){
                 
-                if(!inJsonMover.get("result").asString().equals("CRASHED")){
-                    
-                    System.out.println("\nAgente("+this.getName()+") se ha movido");
-                    
-                } else {
+                if(inJsonMover.get("result").asString().equals("CRASHED")){
                     
                     System.out.println("\nAgente("+this.getName()+") se ha chocado o se ha quedado sin bateria");
                     
-                    //Desloguearse y avisar al Perceptor para que se cierre
+                    // Desloguearse y avisar al Perceptor para que se cierre
                     this.logout();
                     
-                    
                 }
-                
                 
             }else{
                 //Desloguearse y avisar al Perceptor para que se cierre
@@ -639,7 +622,6 @@ public class Coche extends SingleAgent {
         JsonObject inJsonRefuel = null;
         try {
             
-            System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
             ACLMessage inboxRefuel = this.receiveACLMessage();
             inJsonRefuel = Json.parse(inboxRefuel.getContent()).asObject();
          
@@ -668,8 +650,7 @@ public class Coche extends SingleAgent {
     public void logout(){
         
         System.out.println("\nAgente("+this.getName()+") haciendo logout");
-        System.out.println("contador cocheMove:"+contador);
-        System.out.println("contador cocheP:"+contadorP);
+        System.out.println("Contador movimientos: "+contador);
         JsonObject jsonLogout = new JsonObject();
         
         jsonLogout.add("command", "logout");
@@ -683,14 +664,13 @@ public class Coche extends SingleAgent {
         
         JsonObject inJsonLogout = null;
         try {
-            System.out.println("\nAgente("+this.getName()+") obteniendo respuesta del servidor");
             ACLMessage inboxLogout = this.receiveACLMessage();
             
             for (int i=0; i<3; i++){
                 if (inboxLogout.getContent().contains("trace")){
                     inJsonLogout = Json.parse(inboxLogout.getContent()).asObject();
                 } else if (!inboxLogout.getContent().contains("perceptor") && !inboxLogout.getContent().contains("OK")){
-                    // ha ocurrido un fallo
+                    System.err.println("Error al recibir respuesta de logout.");
                 }
                 inboxLogout = this.receiveACLMessage();
             }
